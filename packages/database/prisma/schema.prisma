@@ -1,0 +1,284 @@
+// =============================================================================
+// EXOSQUAD — Prisma Schema
+// =============================================================================
+// Foundation tables: multi-tenancy, auth, sources, products, evidence,
+// jobs, API connections, audit.
+//
+// Phase 2+ will add: demand intelligence, supply graph, authenticity
+// assessments, logistics, landed cost, market economics.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// MULTI-TENANCY
+// =============================================================================
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  status    String   @default("active") // active | suspended | cancelled
+  config    Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  sources       Source[]
+  apiConnections ApiConnection[]
+  products      Product[]
+  jobs          Job[]
+  auditLogs     AuditLog[]
+
+  @@map("tenants")
+}
+
+// =============================================================================
+// AUTHENTICATION & AUTHORIZATION
+// =============================================================================
+
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String
+  email        String
+  passwordHash String
+  name         String?
+  role         String   @default("member") // owner | admin | member | viewer
+  status       String   @default("active") // active | disabled
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("users")
+}
+
+// =============================================================================
+// DATA SOURCES — configurable ingestion endpoints
+// =============================================================================
+
+model Source {
+  id              String   @id @default(cuid())
+  tenantId        String
+  name            String
+  type            String   // web_scraper | api_connector | marketplace | social_signal | product_database
+  connectorType   String   // universal_api | custom_scraper | marketplace_adapter
+  config          Json     @default("{}") // URL, auth, headers, mapping rules
+  scheduleCron    String?  // null = manual only
+  status          String   @default("active") // active | paused | error | disabled
+  lastRunAt       DateTime?
+  lastSuccessAt   DateTime?
+  lastError       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant       Tenant          @relation(fields: [tenantId], references: [id])
+  observations Observation[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("sources")
+}
+
+// =============================================================================
+// RAW OBSERVATIONS — immutable evidence from sources
+// =============================================================================
+
+model Observation {
+  id                  String   @id @default(cuid())
+  sourceId            String
+  tenantId            String
+  rawUrl              String?
+  rawPayload          Json
+  contentHash         String   // SHA-256 of raw payload for dedup
+  retrievedAt         DateTime // when the data was fetched from source
+  observedAt          DateTime // when the data was observed/published
+  parserVersion       String?  // connector/parser version that processed this
+  normalizationStatus String   @default("pending") // pending | normalized | failed | skipped
+  normalizedPayload   Json?
+  normalizedAt        DateTime?
+  createdAt           DateTime @default(now())
+
+  source Source @relation(fields: [sourceId], references: [id])
+
+  @@index([sourceId])
+  @@index([tenantId])
+  @@index([contentHash])
+  @@index([normalizationStatus])
+  @@index([retrievedAt])
+  @@map("observations")
+}
+
+// =============================================================================
+// PRODUCT IDENTITY — resolved entities with evidence chain
+// =============================================================================
+
+model Product {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  brand       String?
+  category    String?
+  gtin        String?  // Global Trade Item Number (UPC/EAN)
+  mpn         String?  // Manufacturer Part Number
+  sku         String?
+  country     String?  // country of origin
+  description String?
+  attributes  Json     @default("{}")
+  confidence  Float    @default(0.0) // 0.0–1.0 resolution confidence
+  status      String   @default("active") // active | merged | deprecated
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  variants   ProductVariant[]
+  evidence   Evidence[]
+
+  @@index([tenantId])
+  @@index([brand])
+  @@index([gtin])
+  @@map("products")
+}
+
+model ProductVariant {
+  id          String   @id @default(cuid())
+  productId   String
+  sku         String?
+  name        String?
+  packSize    String?
+  volume      String?
+  weight      String?
+  weightUnit  String?  // g | kg | oz | lb
+  color       String?
+  size        String?
+  attributes  Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@index([sku])
+  @@map("product_variants")
+}
+
+// =============================================================================
+// EVIDENCE & PROVENANCE — trace every conclusion to its source
+// =============================================================================
+
+model Evidence {
+  id              String   @id @default(cuid())
+  tenantId        String
+  entityType      String   // product | supplier | source
+  entityId        String
+  productId       String?  // direct FK when entityType = 'product'
+  observationId   String?
+  sourceId        String?
+  claimType       String   // price | availability | specification | authenticity | demand_signal
+  claimValue      Json
+  confidence      Float    @default(0.0)
+  method          String   // manual | automated | ai_inference
+  methodVersion   String?
+  verified        Boolean  @default(false)
+  verifiedAt      DateTime?
+  createdAt       DateTime @default(now())
+
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([tenantId])
+  @@index([claimType])
+  @@index([productId])
+  @@map("evidence")
+}
+
+// =============================================================================
+// JOB QUEUE PERSISTENCE — track async job execution
+// =============================================================================
+
+model Job {
+  id          String    @id @default(cuid())
+  tenantId    String?
+  queue       String    // ingestion | normalization | analysis | outreach
+  type        String    // specific job type within queue
+  payload     Json      @default("{}")
+  status      String    @default("pending") // pending | running | completed | failed | cancelled
+  priority    Int       @default(0)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  result      Json?
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@index([queue, status])
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("jobs")
+}
+
+// =============================================================================
+// UNIVERSAL API CONNECTIONS — provider-agnostic connector config
+// =============================================================================
+
+model ApiConnection {
+  id           String   @id @default(cuid())
+  tenantId     String
+  name         String
+  provider     String   // user-defined label for the provider
+  baseUrl      String
+  authType     String   // none | api_key | bearer | basic | oauth2
+  authConfig   Json     @default("{}") // encrypted at rest in production
+  headers      Json     @default("{}")
+  rateLimit    Int?     // requests per minute
+  timeout      Int      @default(30000) // milliseconds
+  retryConfig  Json     @default("{\"maxAttempts\":3,\"backoffMs\":1000}")
+  status       String   @default("active") // active | error | disabled
+  lastHealthAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@map("api_connections")
+}
+
+// =============================================================================
+// AUDIT LOG — immutable record of all significant actions
+// =============================================================================
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  tenantId    String?
+  userId      String?
+  action      String   // create | update | delete | login | logout | ingest | etc.
+  resource    String   // user | source | product | etc.
+  resourceId  String?
+  metadata    Json     @default("{}")
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

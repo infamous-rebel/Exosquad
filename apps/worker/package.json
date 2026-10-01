@@ -1,0 +1,29 @@
+{
+  "name": "@exosquad/worker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:integration": "vitest run --config vitest.config.integration.ts",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "fastify": "^5.1.0",
+    "bullmq": "^5.25.0",
+    "ioredis": "^5.4.1",
+    "@exosquad/database": "workspace:*",
+    "@exosquad/common": "workspace:*",
+    "@exosquad/config": "workspace:*",
+    "@exosquad/logger": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.5"
+  }
+}
