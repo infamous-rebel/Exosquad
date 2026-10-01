@@ -36,13 +36,14 @@ describe("Ingestion Processor", () => {
     );
   });
 
-  it("should process valid job data", async () => {
+  it("should throw when source not found in database", async () => {
     const job = createMockJob({
       sourceId: "source-1",
       tenantId: "tenant-1",
     });
-    // Phase 2 will implement actual processing
-    // For now, it should complete without error
-    await expect(processIngestionJob(job)).resolves.toBeUndefined();
+    // Phase 2: processor loads source from DB; non-existent source throws
+    await expect(processIngestionJob(job)).rejects.toThrow(
+      "Source not found"
+    );
   });
 });

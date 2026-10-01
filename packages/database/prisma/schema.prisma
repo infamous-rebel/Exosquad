@@ -79,14 +79,25 @@ model Source {
   lastRunAt       DateTime?
   lastSuccessAt   DateTime?
   lastError       String?
+  // ─── Phase 2: Source health tracking ──────────────────────────────────
+  healthStatus    String   @default("unknown") // unknown | healthy | degraded | unhealthy
+  consecutiveErrors Int    @default(0)
+  totalFetched    Int      @default(0)
+  totalFailed     Int      @default(0)
+  avgLatencyMs    Float?
+  lastFetchedAt   DateTime?
+  lastHealthyAt   DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   tenant       Tenant          @relation(fields: [tenantId], references: [id])
   observations Observation[]
+  rawResponses RawResponse[]
+  checkpoints  IngestionCheckpoint[]
 
   @@index([tenantId])
   @@index([status])
+  @@index([healthStatus])
   @@map("sources")
 }
 
@@ -281,4 +292,60 @@ model AuditLog {
   @@index([resource, resourceId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// =============================================================================
+// RAW RESPONSES — immutable HTTP response records with full provenance
+// =============================================================================
+
+model RawResponse {
+  id              String   @id @default(cuid())
+  sourceId        String
+  connectionId    String?
+  tenantId        String
+  requestUrl      String
+  requestMethod   String   @default("GET")
+  requestHeaders  Json     @default("{}") // sanitized — no secrets
+  httpStatus      Int
+  responseHeaders Json     @default("{}")
+  payloadRef      String?  // reference to stored payload (future: object storage)
+  payloadInline   Json?    // inline payload for Phase 2 (migrate to ref later)
+  contentHash     String   // SHA-256 of raw response body
+  latencyMs       Int
+  recordCount     Int      @default(0)
+  jobId           String?
+  errorMessage    String?
+  retrievedAt     DateTime @default(now())
+
+  source      Source @relation(fields: [sourceId], references: [id])
+
+  @@index([sourceId])
+  @@index([tenantId])
+  @@index([contentHash])
+  @@index([retrievedAt])
+  @@index([jobId])
+  @@map("raw_responses")
+}
+
+// =============================================================================
+// INGESTION CHECKPOINTS — resumable ingestion state per source
+// =============================================================================
+
+model IngestionCheckpoint {
+  id              String   @id @default(cuid())
+  sourceId        String
+  tenantId        String
+  lastCursor      String?  // cursor-based pagination state
+  lastPage        Int?     // page-based pagination state
+  lastOffset      Int?     // offset-based pagination state
+  lastSyncTimestamp DateTime? // for incremental sync
+  totalRecordsProcessed Int @default(0)
+  lastBatchId     String?  // idempotency key for last batch
+  updatedAt       DateTime @updatedAt
+
+  source Source @relation(fields: [sourceId], references: [id])
+
+  @@unique([sourceId])
+  @@index([tenantId])
+  @@map("ingestion_checkpoints")
 }
