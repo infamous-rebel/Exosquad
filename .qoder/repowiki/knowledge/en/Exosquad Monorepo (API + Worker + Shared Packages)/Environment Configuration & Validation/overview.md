@@ -1,0 +1,1 @@
+Shared package that defines and validates all runtime environment variables using Zod, exposing a typed singleton config consumed by the rest of the application.

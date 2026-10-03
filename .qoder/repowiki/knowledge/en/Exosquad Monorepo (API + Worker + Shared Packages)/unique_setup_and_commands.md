@@ -1,0 +1,1 @@
+Root scripts wrap Turbo: `pnpm dev` boots all apps in parallel, `pnpm test` / `pnpm test:unit` / `pnpm test:integration` run tests across the workspace, `pnpm db:migrate` / `pnpm db:migrate:dev` / `pnpm db:generate` target `@exosquad/database`. Local infra is started via `docker compose up -d` (Postgres on 5432, Redis on 6379).

@@ -228,7 +228,7 @@ The system supports arbitrary data sources through a universal connector abstrac
 
 ## 12. PHASE TRACKING
 
-### Phase 1 — Foundation (CURRENT)
+### Phase 1 — Foundation ✅
 - [x] Repository structure
 - [x] Technology stack
 - [x] Package/workspace configuration
@@ -239,31 +239,173 @@ The system supports arbitrary data sources through a universal connector abstrac
 - [x] Docker Compose for local development
 - [x] Architecture documentation
 
-### Phase 2 — Intelligence Pipeline
-- [ ] Universal connector framework
-- [ ] Ingestion pipeline (real HTTP fetching)
-- [ ] Normalization pipeline (schema mapping)
-- [ ] Product entity resolution
-- [ ] Evidence chain persistence
-- [ ] Source scheduling (cron-based)
-- [ ] Source health monitoring
+### Phase 2 — Intelligence Pipeline ✅
+- [x] Universal connector framework
+- [x] Ingestion pipeline (real HTTP fetching)
+- [x] Normalization pipeline (schema mapping)
+- [x] Product entity resolution
+- [x] Evidence chain persistence
+- [x] Source scheduling (cron-based)
+- [x] Source health monitoring
 
-### Phase 3 — Product Intelligence
-- [ ] Demand intelligence engine
-- [ ] Supply graph analysis
-- [ ] Authenticity classification
-- [ ] Logistics research
-- [ ] Landed cost calculations
-- [ ] Market economics
-- [ ] AI research orchestration
+### Phase 3 — Product Intelligence ✅
+- [x] Demand intelligence engine
+- [x] Supply graph analysis
+- [x] Authenticity classification
+- [x] Logistics research
+- [x] Landed cost calculations
+- [x] Market economics
+- [x] AI research orchestration
 
-### Phase 4 — User Experience
-- [ ] Landing page
-- [ ] Dashboard
-- [ ] Source management UI
-- [ ] Product explorer
-- [ ] Alert configuration
-- [ ] Supplier outreach
+### Phase 4 — Identity & Organization ✅
+- [x] Identity resolution (product merging, conflict resolution)
+- [x] Organization entity resolution (supplier/brand merging)
+- [x] Evidence & provenance chain (claims, provenance graph)
+- [x] Calculation persistence with versioning
+
+### Phase 5 — Demand & Trend Intelligence ✅
+- [x] Demand signal time-series architecture
+- [x] 8 deterministic calculation engines
+- [x] Confidence scoring with data quality
+- [x] Full provenance chain
+- [x] Bangladesh geographic filtering
+
+### Phase 6 — Evidence & Provenance ✅
+- [x] Evidence claims system
+- [x] Provenance graph edges
+- [x] Conflict detection and preservation
+- [x] Calculation versioning
+
+### Phase 7 — Demand & Trend Intelligence Engine ✅
+- [x] DemandSignal time-series with deduplication
+- [x] DemandCalculation versioned snapshots
+- [x] 8 calculation engines (growth, acceleration, velocity, trend, momentum, persistence, volatility, seasonality)
+- [x] Confidence model (signal, source, persistence, completeness, agreement)
+- [x] Full provenance: calculation → signals → observations → sources
+
+### Phase 8 — Decision Intelligence & Reseller Opportunity Engine ✅
+- [x] Opportunity schema (5 models + 1 enum)
+- [x] Pure deterministic calculation engine
+- [x] SHA-256 content hash deduplication
+- [x] Evidence provenance chain
+- [x] Risk assessment (8 types)
+- [x] Action recommendations (9 types)
+- [x] Opportunity classification (7 types)
+- [x] Status lifecycle (DETECTED → WATCH → ACTIONABLE → EXPIRED)
+- [x] RESTful API (8 endpoints)
+- [x] Worker processor (4 job types)
+- [x] Opportunity scheduler (6-hour cycle)
+- [x] 35 unit tests + 18 integration tests
+
+### Phase 8 (Original Roadmap) — Authenticity Intelligence Engine ✅
+- [x] Authenticity schema (5 models + 1 enum: AuthenticityStatus)
+- [x] 40+ signal types across 8 categories (product, brand, seller, supplier, listing, document, pricing, cross-source)
+- [x] Pure deterministic scoring engine (identity 25%, brand 15%, 6×10% categories)
+- [x] Confidence engine (quantity 20%, quality 25%, independence 20%, completeness 15%, consistency 20%)
+- [x] Score ≠ Confidence — independent dimensions
+- [x] Contradiction detection (explicit conflicts + implicit content hash divergence)
+- [x] SHA-256 input hash deduplication
+- [x] 8 status classifications (UNASSESSED → CONTRADICTED)
+- [x] 5 risk types (IDENTITY_CONTRADICTION, MISSING_EVIDENCE, PRICE_ANOMALY, SOURCE_CONFLICT, CONTENT_REUSE)
+- [x] Full provenance: Assessment → Signal → Evidence → Source
+- [x] RESTful API (9 endpoints under /api/v1/authenticity)
+- [x] Worker processor (4 job types: detect, recalculate, refresh, expire)
+- [x] Authenticity scheduler (12-hour cycle)
+- [x] 30 unit tests + 24 integration tests
+- [x] Backward compatible with existing Phase 8 Opportunity engine
+
+### Phase 9 — Supply-Chain Tracing & Provenance Graph Engine ✅
+- [x] Supply-chain schema (10 models + 4 Prisma enums: SupplyChainNodeType, SupplyChainEdgeType, SupplyChainRelationshipStatus, SupplyChainConflictResolutionState)
+- [x] 29 node types, 30 edge types, 7 relationship statuses
+- [x] Pure deterministic confidence engine (6 dimensions: evidence 25%, independence 20%, identity 20%, directness 15%, corroboration 10%, freshness 10%)
+- [x] 5-dimensional completeness model (node, edge, evidence, identity, temporal)
+- [x] SHA-256 content hash deduplication (edges, observations, assessments)
+- [x] Deterministic inputHash — pure SHA-256 fingerprint, no timestamp contamination
+- [x] Assessment version history (monotonically increasing version per subject)
+- [x] 7 anomaly types (SELF_LOOP, CYCLE_DETECTED, CONTRADICTORY_MANUFACTURER, CONTRADICTORY_ORIGIN, TEMPORAL_OVERLAP, SUSPICIOUS_SHORTCUT, INVALID_RELATIONSHIP)
+- [x] 7 conflict types with resolution states (OPEN, RESOLVED, SUPERSEDED, UNRESOLVED)
+- [x] BFS path discovery with bounded depth, cycle detection, and traversal filters (nodeTypes, edgeTypes, statuses, minimumConfidence)
+- [x] Canonical entity references with partial unique index (tenantId + nodeType + canonicalEntityType + canonicalEntityId WHERE NOT NULL)
+- [x] Concurrency-safe upsert patterns for edges, observations, evidence links
+- [x] asOf temporal reconstruction for historical graph queries
+- [x] Full relationship filters (sourceId, country, productId, sellerId, supplierId, manufacturerId, hasEvidence, asOf)
+- [x] Full provenance: Assessment → Decision → Edge → Observation → Evidence → Source
+- [x] RESTful API (20+ endpoints under /api/v1/supply-chain)
+- [x] Worker processor (6 job types: build, recalculate, refresh, detect-conflicts, detect-anomalies, expire)
+- [x] Supply-chain scheduler (12-hour cycle)
+- [x] 42 unit tests + 36 integration tests (including 10 adversarial tests)
+- [x] Backward compatible with all Phase 2–8 implementations
+
+### Phase 10 — Logistics & Routing Intelligence ✅
+- [x] Logistics schema (10 models + 5 Prisma enums: LogisticsNodeType, LogisticsLegType, LogisticsRouteStatus, LogisticsAvailabilityStatus, LogisticsConflictResolutionState)
+- [x] Common package (logistics enums, types, LOGISTICS_CONFIG with confidence weights, temporal decay, risk thresholds, traversal defaults)
+- [x] Pure deterministic logistics engine (logistics-engine.ts — content hashing, leg confidence, route confidence, transit duration aggregation, BFS route discovery, risk detection (16 types), anomaly detection (12 types), contradiction detection, completeness metrics)
+- [x] Logistics intelligence service (logistics-intelligence.ts — orchestrator: assess, recalculate, CRUD, graph queries, route discovery, relationship queries, graph builder from Phase 9)
+- [x] RESTful API (17+ endpoints under /api/v1/logistics)
+- [x] Worker processor (7 job types: build, calculate-routes, recalculate, detect-conflicts, detect-anomalies, refresh, expire)
+- [x] Logistics scheduler (12-hour cycle)
+- [x] Queue registration in queue-manager.ts
+- [x] Unit tests (45 tests covering all engine functions)
+- [x] Integration tests (33 tests including 12 adversarial scenarios)
+- [x] Phase 9 integration: LogisticsNode references SupplyChainNode via canonical references — no duplication
+- [x] Unknown transit times preserved as UNKNOWN (never substituted as zero)
+- [x] Confidence, risk, and completeness as independent dimensions
+- [x] Deterministic content hashing (SHA-256, no timestamp contamination)
+- [x] Monotonic version column for assessment history
+- [x] Tenant isolation enforced at application layer
+
+### Phase 11 — Landed Cost, Pricing & Margin Intelligence ✅
+- [x] Pricing schema (12 Prisma enums + 7 models: PriceObservation, CostComponent, LandedCostCalculation, PricingScenario, MarketPriceSnapshot, PricingRisk, PricingAssessment)
+- [x] Common package (pricing enums, PRICING_CONFIG with confidence weights, completeness weights, staleness thresholds, comparability rules, scenario rules)
+- [x] Pure deterministic pricing engine (pricing-engine.ts — content hashing (6 functions), currency normalization, unit normalization, price comparability, market aggregation (min/max/mean/median/P25/P75/spread/volatility), landed cost calculation (11 categories), margin calculations (gross profit/margin/markup/break-even/target), scenario building (CONSERVATIVE/BASE/UPSIDE), price position, risk detection (19 types), completeness, confidence)
+- [x] Pricing intelligence service (pricing-intelligence.ts — orchestrator: assess, recalculate, CRUD for observations/costs/scenarios/landed-costs/market-snapshots, provenance, history)
+- [x] RESTful API (20+ endpoints under /api/v1/pricing: assess, list, get, recalculate, landed-costs, scenarios, market-snapshots, observations, cost-components, risks, provenance, history)
+- [x] Worker processor (4 job types: assess, recalculate, refresh, expire)
+- [x] Pricing scheduler (12-hour cycle)
+- [x] Queue registration in queue-manager.ts
+- [x] Unit tests (64 tests covering all engine functions)
+- [x] Phase 9/10 integration: Uses canonical Supplier IDs, LogisticsRoute IDs — no second identity system
+- [x] Unknown ≠ Zero: missing inputs propagate as null/UNKNOWN throughout all calculations
+- [x] Negative margin is valid: it is not an error state
+- [x] Risk detection explains trigger and affected evidence/input
+- [x] No investment-style verdicts: exposes commercial facts, calculations, uncertainty, and risks
+- [x] Deterministic content hashing (SHA-256, stable JSON ordering, no timestamp contamination)
+- [x] Monotonic version column for assessment history
+- [x] Tenant isolation enforced at database/service layer
+
+### Phase 12 — Product Opportunity, Competition & Reseller Viability ✅
+- [x] Opportunity schema (6 models: CompetitorObservation, CompetitorSnapshot, DemandOpportunitySnapshot, ProductOppSignal, ProductOppRisk, ResellerViabilityAssessment)
+- [x] Common package (PRODUCT_OPP_SIGNAL_TYPES 22-type vocabulary, PRODUCT_OPP_CONFIG with competition/saturation/price-compression/risk thresholds, confidence + completeness weights, opportunity + viability level thresholds)
+- [x] Pure deterministic engine (product-opportunity-engine.ts — 5 dimension analyzers, Unknown ≠ Zero score renormalization over known dimensions only, derived margin range as fractions of price, viability score with margin multipliers, 13 threshold-driven signals from the 22-type vocabulary, 12 risk types, 5 market-gap types, viability constraints, 7 SHA-256 hash functions, completeness + confidence models)
+- [x] Opportunity ≠ Viability: independent scores, levels, and persistence
+- [x] Intelligence service (product-opportunity-intelligence.ts — 11 methods: assess, recalculate, list/get/history, signals, risks, snapshots, observations, create observation, expire)
+- [x] RESTful API (13 endpoints under /api/v1/opportunity)
+- [x] Worker processor (4 job types: assess, recalculate, refresh, expire) — self-contained, imports only database/logger/common/bullmq
+- [x] Queue registration ("product_opportunity") and scheduler (12-hour cycle, 48-hour competitor observation window, 20 jobs/tenant cap, deterministic jobIds)
+- [x] Cross-phase canonical references: Phase 7 demand signals/calculations, Phase 9 supply-chain nodes, Phase 10 logistics legs, Phase 11 price observations/landed costs — no second identity system
+- [x] Unknown ≠ Zero: unknown dimensions excluded from weighted aggregates and renormalized; no fabricated neutral scores
+- [x] Strict signal-type validation: unknown signal values throw, never substituted with a fallback type
+- [x] SHA-256 content-hash deduplication for snapshots/signals/risks; monotonic versioned assessments; 14-day staleness expiry
+- [x] Unit tests (77 engine tests) + integration tests (24, including adversarial tenant-isolation, renormalization, version monotonicity, hash divergence, dedup, provenance)
+- [x] Full regression green: 391/391 unit, 204/204 integration, lint + build 10/10 packages
+
+### Phase 14 — AI Research & Reasoning Engine ✅
+- [x] Research schema (7 models + 5 Prisma enums: ResearchRequestStatus, ResearchQuestionType, ResearchEvidenceQuality, ResearchHypothesisStatus, ResearchTemporalClassification)
+- [x] 10 question types, 8 request statuses, 4 quality levels, 5 hypothesis statuses, 5 temporal classifications
+- [x] Common package (RESEARCH_CONFIG with confidence weights, evidence quality weights, temporal thresholds, contradiction thresholds, depth presets, staleness/cache TTL)
+- [x] AI provider abstraction (research-provider.ts — NoOp + HTTP implementations, Zod-validated responses, graceful degradation when AI unavailable)
+- [x] Pure deterministic engine (research-engine.ts — 9 SHA-256 content hash functions, evidence quality assessment (5-dimension weighted scoring), contradiction detection (numeric tolerance + categorical), confidence calculation (5-dimension), research gap detection (10 dimensions), hypothesis evaluation, completeness calculation (4 sub-scores), depth presets (brief/standard/deep), execution limit checking)
+- [x] Intelligence service (research-intelligence.ts — orchestrator: create request, execute research (10-step workflow), evidence retrieval from Phases 6/7/9/11, cancel, expire, list/get/history queries)
+- [x] RESTful API (10 endpoints under /api/v1/research)
+- [x] Worker processor (3 job types: research:execute, research:refresh, research:expire) — self-contained, no API imports
+- [x] Queue registration ("research") and scheduler (30-second cycle, deterministic jobIds)
+- [x] AI ≠ truth: deterministic engine always runs; AI augments but never overrides evidence
+- [x] Unknown ≠ Zero: missing evidence propagates as INSUFFICIENT_EVIDENCE, no fabricated confidence
+- [x] SHA-256 content-hash deduplication for requests/results/evidence/contradictions/hypotheses/gaps; monotonic versioned assessments
+- [x] Cache TTL: identical requests within TTL return cached results
+- [x] Bounded research loops: depth presets limit sub-questions, evidence, iterations, model calls, tokens
+- [x] Unit tests (55 engine tests) + integration tests (26, including adversarial tenant-isolation, full workflow, cancel/expire, pagination, determinism)
+- [x] Full regression green: 623/623 unit, 254/254 integration, build 11/11 packages
 
 ---
 

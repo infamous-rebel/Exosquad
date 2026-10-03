@@ -1,0 +1,1 @@
+Shared Prisma-based data access package providing the canonical PostgreSQL schema, migrations, and a singleton PrismaClient instance for the EXOSQUAD platform.

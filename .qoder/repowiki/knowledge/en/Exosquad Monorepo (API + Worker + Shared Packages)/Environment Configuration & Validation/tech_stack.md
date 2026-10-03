@@ -1,0 +1,1 @@
+Zod v3 for runtime validation against `process.env`, TypeScript v5 for compile-time types derived from the schema via `z.infer`.

@@ -1,0 +1,1 @@
+BullMQ 5.x backed by ioredis against a shared Redis instance; Fastify 5.x for a minimal health HTTP server; Prisma client (`@exosquad/database`) for source polling; custom 5-field cron expression parser (no external cron library); tsx for dev hot-reload; Vitest for unit tests.

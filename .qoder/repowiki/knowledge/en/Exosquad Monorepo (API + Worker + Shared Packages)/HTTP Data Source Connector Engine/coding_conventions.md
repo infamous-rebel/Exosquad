@@ -1,0 +1,5 @@
+- Each feature module pairs a configuration object with a Zod schema and a `parseXxxConfig` validator (e.g. `authConfigSchema`/`parseAuthConfig`, `paginationConfigSchema`/`parsePaginationConfig`, `retryConfigSchema`/`parseRetryConfig`, `fieldMappingSchema`/`parseFieldMapping`).
+- Errors extend `ConnectorError` from `@exosquad/common.AppError`, set an explicit `statusCode`, `code`, `sourceId`, and `retryable` flag in the constructor.
+- Per-source concurrency primitives (`RateLimiter`, `CircuitBreaker`) are keyed by `sourceId` so a single `HttpConnector` instance can safely serve multiple upstreams concurrently.
+- SSRF protection is enforced centrally via `validateOutboundUrl` blocking non-http(s) protocols, localhost/private IP ranges, and a hard-coded hostname allowlist before any network call.
+- Sensitive header values are stripped through `sanitizeRequestHeaders` using a `SENSITIVE_HEADERS` set before being attached to persisted `FetchResult.requestHeaders`.

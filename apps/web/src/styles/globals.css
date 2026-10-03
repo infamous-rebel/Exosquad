@@ -1,0 +1,159 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: theme("colors.glass.border");
+  }
+
+  body {
+    font-family: theme("fontFamily.sans");
+    background-color: theme("colors.graphite.950");
+    color: theme("colors.graphite.50");
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar styling for terminal aesthetic */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: theme("colors.graphite.700");
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: theme("colors.graphite.600");
+  }
+}
+
+@layer components {
+  /* === GLASS PANEL === */
+  .glass-panel {
+    background: theme("colors.glass.DEFAULT");
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 0.5px solid theme("colors.glass.border");
+    border-radius: theme("borderRadius.xs");
+  }
+
+  .glass-panel-light {
+    background: theme("colors.glass.light");
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 0.5px solid theme("colors.glass.borderLight");
+    border-radius: theme("borderRadius.xs");
+  }
+
+  /* === DATA STRIP === */
+  .data-strip {
+    display: flex;
+    align-items: center;
+    gap: theme("spacing.3");
+    padding: theme("spacing.2") theme("spacing.3");
+    border-bottom: 0.5px solid theme("colors.glass.border");
+  }
+
+  .data-strip:last-child {
+    border-bottom: none;
+  }
+
+  /* === TERMINAL TEXT === */
+  .terminal-text {
+    font-family: theme("fontFamily.mono");
+    font-size: theme("fontSize.xs");
+    letter-spacing: 0.02em;
+  }
+
+  .data-value {
+    font-family: theme("fontFamily.mono");
+    font-weight: 500;
+  }
+
+  .section-label {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: theme("colors.graphite.400");
+  }
+
+  /* === NEUMORPHIC CONTROL === */
+  .neu-control {
+    background: theme("colors.graphite.850");
+    border: 0.5px solid theme("colors.graphite.700");
+    border-radius: theme("borderRadius.xs");
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  .neu-control-active {
+    background: theme("colors.graphite.800");
+    border-color: theme("colors.accent.DEFAULT");
+    box-shadow:
+      inset 0 1px 2px rgba(0, 0, 0, 0.3),
+      0 0 0 1px theme("colors.accent.dim");
+  }
+
+  /* === STATUS INDICATOR === */
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .status-dot-live {
+    background: theme("colors.status.live");
+    animation: pulse-live 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .status-dot-updated {
+    background: theme("colors.status.updated");
+  }
+
+  .status-dot-changed {
+    background: theme("colors.status.changed");
+  }
+
+  .status-dot-stale {
+    background: theme("colors.status.stale");
+  }
+
+  .status-dot-failed {
+    background: theme("colors.status.failed");
+  }
+
+  .status-dot-nodata {
+    background: theme("colors.status.nodata");
+  }
+
+  /* === THIN DIVIDER === */
+  .thin-divider {
+    height: 0.5px;
+    background: theme("colors.glass.border");
+  }
+
+  .thin-divider-v {
+    width: 0.5px;
+    background: theme("colors.glass.border");
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

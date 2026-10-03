@@ -1,16 +1,16 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src"
+    "outDir": "dist"
   },
   "references": [
     { "path": "../../packages/database" },
     { "path": "../../packages/common" },
     { "path": "../../packages/config" },
     { "path": "../../packages/logger" },
-    { "path": "../../packages/connector" }
+    { "path": "../../packages/connector" },
+    { "path": "../../packages/normalization" }
   ],
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "../api/src/services/supplier-matching-engine.ts", "../api/src/services/supplier-evaluation-engine.ts", "../api/src/services/sourcing-engine.ts", "../api/src/services/procurement-viability-engine.ts"],
   "exclude": ["node_modules", "dist", "test"]
 }

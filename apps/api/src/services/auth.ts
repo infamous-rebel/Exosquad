@@ -1,10 +1,12 @@
 import bcrypt from "bcryptjs";
-import { prisma } from "@exosquad/database";
+import crypto from "node:crypto";
+import { prisma, Prisma } from "@exosquad/database";
 import { signToken } from "../plugins/auth.js";
 import {
   ConflictError,
   UnauthorizedError,
   NotFoundError,
+  ValidationError,
 } from "@exosquad/common";
 
 const BCRYPT_ROUNDS = 12;
@@ -185,5 +187,112 @@ export class AuthService {
         slug: user.tenant.slug,
       },
     };
+  }
+
+  // ─── Password Reset ──────────────────────────────────────────────────────
+
+  /**
+   * Request a password reset token.
+   * Enumeration-safe: always returns success, never reveals whether email exists.
+   * Stores SHA-256 hash of raw token; raw token returned for dev (no email service).
+   */
+  async requestPasswordReset(email: string): Promise<{ success: true }> {
+    const normalisedEmail = email.toLowerCase().trim();
+
+    // Find user by email across all tenants
+    const user = await prisma.user.findFirst({
+      where: { email: normalisedEmail },
+    });
+
+    if (user) {
+      const rawToken = crypto.randomBytes(32).toString("hex");
+      const hashedToken = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex");
+      const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordResetToken: hashedToken,
+          passwordResetExpiry: expiry,
+        },
+      });
+    }
+
+    // Always return success — never reveal whether the account exists
+    return { success: true };
+  }
+
+  /**
+   * Reset password using a raw reset token.
+   * Validates the token hash and expiry before updating the password.
+   */
+  async resetPassword(
+    rawToken: string,
+    newPassword: string,
+  ): Promise<{ success: true }> {
+    // Hash the incoming token to compare with stored hash
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+
+    const user = await prisma.user.findFirst({
+      where: {
+        passwordResetToken: hashedToken,
+        passwordResetExpiry: { gt: new Date() },
+      },
+    });
+
+    if (!user) {
+      throw new ValidationError("Invalid or expired reset token");
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        passwordResetToken: null,
+        passwordResetExpiry: null,
+      },
+    });
+
+    return { success: true };
+  }
+
+  // ─── Onboarding ──────────────────────────────────────────────────────────
+
+  /**
+   * Update tenant onboarding configuration.
+   * Merges onboarding data into existing Tenant.config without overwriting unrelated keys.
+   * Tenant ID must come from the authenticated session (JWT), never from client input.
+   */
+  async updateOnboarding(
+    tenantId: string,
+    onboardingData: Record<string, unknown>,
+  ): Promise<{ success: true }> {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant) {
+      throw new NotFoundError("Tenant", tenantId);
+    }
+
+    // Merge with existing config (do not overwrite unrelated keys)
+    const existingConfig =
+      (tenant.config as Record<string, unknown>) ?? {};
+    const mergedConfig = { ...existingConfig, ...onboardingData } as Record<string, unknown>;
+
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { config: mergedConfig as Prisma.InputJsonValue },
+    });
+
+    return { success: true };
   }
 }

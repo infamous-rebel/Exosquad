@@ -1,0 +1,1 @@
+Node.js worker process that consumes BullMQ queues for ingestion/normalization jobs, runs a cron-driven scheduler polling Prisma sources, and exposes Fastify health endpoints on PORT+1.

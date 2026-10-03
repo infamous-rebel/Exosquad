@@ -1,0 +1,4 @@
+- Domain errors extend `AppError` and set `this.name` to a PascalCase class-name string in their constructor, giving every error a stable identity.
+- Each error subclass passes a fixed HTTP status code and a SCREAMING_SNAKE_CASE error `code` to the `AppError` constructor, keeping status-code-to-code mapping centralized.
+- Input validation is expressed as exported Zod object schemas, and the corresponding TypeScript types are derived via `z.infer<typeof schema>` and re-exported alongside the schema.
+- Cross-package contracts are published as plain `interface` or `type` exports from the single barrel file rather than split across modules.

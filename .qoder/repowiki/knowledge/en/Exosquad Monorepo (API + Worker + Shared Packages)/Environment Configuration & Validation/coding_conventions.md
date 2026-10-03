@@ -1,0 +1,4 @@
+- Each environment variable is declared inside a single Zod object schema grouped by subsystem comment blocks (Database, Redis, Application, Authentication, Worker).
+- Required configuration fields use explicit error messages on validators (e.g. `.url(...)`, `.min(32, ...)`) rather than relying on default Zod messages.
+- Optional or non-critical fields are given sensible defaults via `.default(...)` so the app can start without every variable being set.
+- Numeric env vars are coerced and constrained with `.coerce.number().int().positive()` to guard against string values in `process.env`.

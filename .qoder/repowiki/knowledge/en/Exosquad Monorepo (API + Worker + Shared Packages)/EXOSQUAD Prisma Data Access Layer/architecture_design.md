@@ -1,0 +1,4 @@
+Single-package leaf module (`@exosquad/database`) with two layers:
+- Schema layer: `prisma/schema.prisma` defines the canonical PostgreSQL schema — multi-tenant core models (`Tenant`, `User`, `Source`, `Observation`, `Product`, `ProductVariant`, `Evidence`, `Job`, `ApiConnection`, `AuditLog`, `RawResponse`, `IngestionCheckpoint`) plus migration history under `prisma/migrations/`.
+- Client layer: `src/index.ts` is the only public API, re-exporting `PrismaClient` and generated `Prisma` types from `@prisma/client`, exposing a process-wide singleton `prisma` (guarded by `globalThis` to avoid hot-reload leaks) and a `createTestClient(url)` factory for isolated test connections.
+Dependency direction is one-way: consumers import from this package; it depends only on `@prisma/client` at runtime and `prisma` + `typescript` as dev dependencies. The `.env` file supplies `DATABASE_URL` consumed by the datasource block.

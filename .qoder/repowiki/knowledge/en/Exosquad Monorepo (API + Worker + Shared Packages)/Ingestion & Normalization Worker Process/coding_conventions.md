@@ -1,0 +1,5 @@
+- Each BullMQ job handler is an async function exported from its own `src/processors/<name>.ts` file taking a BullMQ `Job` and returning void, throwing on invalid payload so retry/backoff applies.
+- Job-scoped structured logging is done via `createChildLogger({ jobId, jobName, queue })` before processing rather than using the root logger directly.
+- External dependencies (Redis, database, config, logger) are consumed exclusively through `@exosquad/*` workspace packages instead of direct imports.
+- Lifecycle resources (workers, queues, Fastify server, scheduler timer) are tracked as class fields and shut down in reverse order during `stop()`.
+- Scheduler ticks guard against concurrent execution via a `running` flag and cap lookback to 24 hours (1440 minutes) to bound CPU usage.

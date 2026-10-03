@@ -1,0 +1,18 @@
+schema_version: 1
+module_path: ""
+title: Exosquad Monorepo (API + Worker + Shared Packages)
+scope:
+    - package.json
+    - pnpm-workspace.yaml
+    - turbo.json
+    - tsconfig.base.json
+    - eslint.config.js
+    - vitest.workspace.ts
+    - .gitignore
+    - AGENTS.md
+    - docker-compose.yml
+    - .nvmrc
+    - pnpm-lock.yaml
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,1 @@
+Build: `npm run build` (runs `tsc`); Test: `npm run test` or `npm run test:unit` (runs `vitest run`); Typecheck: `npm run typecheck` (`tsc --noEmit`). Tests live under `test/unit/` alongside each module.

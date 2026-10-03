@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: apps_worker
+title: Ingestion & Normalization Worker Process
+scope:
+    - apps/worker/
+source_files: []
+depends_on: []
+related_to:
+    - path: apps_api
+    - path: packages_connector

@@ -1,0 +1,1 @@
+Build with `pnpm build` (runs `tsc`); type-check without emitting via `pnpm typecheck`; clean artifacts with `pnpm clean` (`rm -rf dist`).

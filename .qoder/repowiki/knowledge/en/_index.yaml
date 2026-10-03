@@ -1,0 +1,102 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: en-US
+branch: main
+nodes_managed: true
+exported_at: "2026-10-01T22:39:16Z"
+modules:
+    "":
+        dir_name: Exosquad Monorepo (API + Worker + Shared Packages)
+        title: Exosquad Monorepo (API + Worker + Shared Packages)
+        scope:
+            - package.json
+            - pnpm-workspace.yaml
+            - turbo.json
+            - tsconfig.base.json
+            - eslint.config.js
+            - vitest.workspace.ts
+            - .gitignore
+            - AGENTS.md
+            - docker-compose.yml
+            - .nvmrc
+            - pnpm-lock.yaml
+        source_files: []
+        children:
+            - apps_api
+            - apps_worker
+            - packages_common
+            - packages_config
+            - packages_connector
+            - packages_database
+            - packages_logger
+        depends_on: []
+        related_to: []
+    apps_api:
+        dir_name: Exosquad REST API Server
+        title: Exosquad REST API Server
+        scope:
+            - apps/api/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: apps_worker
+            - path: packages_connector
+    apps_worker:
+        dir_name: Ingestion & Normalization Worker Process
+        title: Ingestion & Normalization Worker Process
+        scope:
+            - apps/worker/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: apps_api
+            - path: packages_connector
+    packages_common:
+        dir_name: '@exosquad_common — Shared Types, Errors & Validation'
+        title: '@exosquad/common — Shared Types, Errors & Validation'
+        scope:
+            - packages/common/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    packages_config:
+        dir_name: Environment Configuration & Validation
+        title: Environment Configuration & Validation
+        scope:
+            - packages/config/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    packages_connector:
+        dir_name: HTTP Data Source Connector Engine
+        title: HTTP Data Source Connector Engine
+        scope:
+            - packages/connector/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: apps_api
+            - path: apps_worker
+    packages_database:
+        dir_name: EXOSQUAD Prisma Data Access Layer
+        title: EXOSQUAD Prisma Data Access Layer
+        scope:
+            - packages/database/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    packages_logger:
+        dir_name: '@exosquad Logger — Pino Structured Logging'
+        title: '@exosquad Logger — Pino Structured Logging'
+        scope:
+            - packages/logger/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []

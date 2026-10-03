@@ -20,7 +20,10 @@
     "@exosquad/common": "workspace:*",
     "@exosquad/config": "workspace:*",
     "@exosquad/logger": "workspace:*",
-    "@exosquad/connector": "workspace:*"
+    "@exosquad/connector": "workspace:*",
+    "@exosquad/normalization": "workspace:*",
+    "@exosquad/identity": "workspace:*",
+    "@exosquad/entity": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

@@ -1,0 +1,1 @@
+Prisma ORM v5.22 with PostgreSQL provider; TypeScript compilation via `tsc`; CUIDs for primary keys; SHA-256 content hashing for observation/response deduplication.

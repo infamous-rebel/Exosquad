@@ -1,0 +1,1 @@
+Build with `pnpm build` (runs `tsc`); type-check with `pnpm typecheck` (`tsc --noEmit`); clean dist via `pnpm clean`.

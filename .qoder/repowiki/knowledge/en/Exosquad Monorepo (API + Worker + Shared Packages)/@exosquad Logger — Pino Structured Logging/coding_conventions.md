@@ -1,0 +1,2 @@
+- Structured logging goes through the shared `logger` instance from `@exosquad/logger` rather than creating ad-hoc Pino instances.
+- Per-request or per-operation context is attached by calling `createChildLogger({ requestId, tenantId, ... })` and using the returned child logger for subsequent log calls.

@@ -1,0 +1,1 @@
+Fastify-based HTTP API server exposing health, authentication (signup/login/me), and source endpoints with JWT auth, rate limiting, and security headers.

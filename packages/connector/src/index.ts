@@ -8,6 +8,7 @@
 export {
   // Core connector
   HttpConnector,
+  type PageCompleteCallback,
 
   // Auth
   applyAuth,
@@ -72,6 +73,8 @@ export {
   flattenHeaders,
   extractResponseDataArray,
   buildUrl,
+  validateOutboundUrl,
+  parseRetryAfterHeader,
   type SourceConfig,
   type FetchResult,
   type PaginatedFetchResult,

@@ -43,6 +43,6 @@ describe("Auth Routes", () => {
       url: "/api/v1/auth/me",
     });
 
-    expect(response.statusCode).toBe(500); // Auth error
+    expect(response.statusCode).toBe(401); // UnauthorizedError — missing authorization header
   });
 });

@@ -1,0 +1,1 @@
+pnpm workspaces monorepo wiring a Fastify REST API and a BullMQ worker process around shared packages for types, config, Prisma, logging, and an HTTP connector.

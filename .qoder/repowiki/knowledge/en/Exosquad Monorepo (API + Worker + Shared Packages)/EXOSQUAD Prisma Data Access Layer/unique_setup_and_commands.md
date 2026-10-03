@@ -1,0 +1,1 @@
+Requires a `DATABASE_URL` env var in `.env`. Run `pnpm generate` (or `npm run generate`) before using the client to regenerate `@prisma/client`; apply schema changes with `pnpm migrate:dev` (development) or `pnpm migrate:deploy` (production); inspect DB via `pnpm studio`.

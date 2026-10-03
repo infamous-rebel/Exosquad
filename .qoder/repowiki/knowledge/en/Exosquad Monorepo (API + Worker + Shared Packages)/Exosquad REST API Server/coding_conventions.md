@@ -1,0 +1,5 @@
+- Cross-cutting behavior is implemented as Fastify plugins exported from `src/plugins/` and composed through `App.registerPlugins`, using `fastify-plugin` to expose decorators globally.
+- Route handlers validate incoming bodies with Zod schemas defined inline in the route file and call a service constructor instantiated inside the route function.
+- Business logic lives in `src/services/*` classes that throw typed errors from `@exosquad/common` (`ConflictError`, `UnauthorizedError`, `NotFoundError`) rather than returning error codes.
+- All HTTP responses follow a uniform shape produced by the global error handler — successful responses return plain objects, while errors are normalized to `{error:{code,message,details?}}`.
+- Type augmentation of Fastify's `FastifyRequest` and `FastifyInstance` is done via `declare module "fastify"` blocks colocated with the plugin that adds the decorator.

@@ -1,0 +1,1 @@
+Fastify 5 with `fastify-plugin` for modular plugins, `jose` for HS256 JWT signing/verification, `bcryptjs` for password hashing, `zod` for request-body schema validation, Prisma via `@exosquad/database`, and Vitest for testing.

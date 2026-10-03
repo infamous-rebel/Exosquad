@@ -36,6 +36,8 @@ import {
   flattenHeaders,
   extractResponseDataArray,
   buildUrl,
+  validateOutboundUrl,
+  parseRetryAfterHeader,
   type SourceConfig,
   type FetchResult,
   type PaginatedFetchResult,
@@ -49,6 +51,7 @@ const logger = createChildLogger({ module: "http-connector" });
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_RATE_LIMIT = { maxRequests: 60, windowMs: 60_000 };
 const DEFAULT_MAX_PAGES = 1000; // Safety limit to prevent infinite pagination
+const DEFAULT_MAX_RESPONSE_BYTES = 50 * 1024 * 1024; // 50 MB
 
 // ─── HTTP Connector ────────────────────────────────────────────────────────
 
@@ -56,13 +59,30 @@ const DEFAULT_MAX_PAGES = 1000; // Safety limit to prevent infinite pagination
  * Production HTTP connector with full resilience stack.
  * Each instance has shared rate limiter and circuit breaker for all sources.
  */
+/**
+ * Callback invoked after each page is fetched in fetchAll().
+ * Enables incremental checkpointing — if the worker crashes mid-pagination,
+ * the last completed page state is already persisted.
+ */
+export type PageCompleteCallback = (
+  page: FetchResult,
+  pageIndex: number,
+  runningTotal: number,
+  checkpoint: CheckpointState
+) => Promise<void> | void;
+
 export class HttpConnector {
   private rateLimiter: RateLimiter;
   private circuitBreaker: CircuitBreaker;
+  private maxResponseBytes: number;
+  private ssrfProtection: boolean;
 
-  constructor() {
+  constructor(options?: { maxResponseBytes?: number; skipSsrfValidation?: boolean }) {
     this.rateLimiter = new RateLimiter(DEFAULT_RATE_LIMIT);
     this.circuitBreaker = new CircuitBreaker(DEFAULT_CIRCUIT_CONFIG);
+    this.maxResponseBytes = options?.maxResponseBytes ?? DEFAULT_MAX_RESPONSE_BYTES;
+    // SSRF protection is ON by default; tests can disable it for localhost
+    this.ssrfProtection = !options?.skipSsrfValidation;
   }
 
   // ─── Single Fetch ────────────────────────────────────────────────────────
@@ -82,6 +102,15 @@ export class HttpConnector {
     };
     const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
+    // Build request and validate URL BEFORE retry loop
+    // SSRF blocks must not be retried — they are deterministic security blocks
+    const { url, headers, queryParams } = this.buildRequest(config);
+    const fullUrl = buildUrl(url, queryParams);
+
+    if (this.ssrfProtection) {
+      await validateOutboundUrl(fullUrl);
+    }
+
     return withRetry(
       async () => {
         // Circuit breaker guard
@@ -90,11 +119,7 @@ export class HttpConnector {
         // Rate limit
         await this.rateLimiter.acquire(sourceId, signal);
 
-        // Build request
-        const { url, headers, queryParams } = this.buildRequest(config);
-        const fullUrl = buildUrl(url, queryParams);
-
-        // Execute HTTP request
+        // Execute HTTP request (with safe redirect following)
         const startTime = Date.now();
         const response = await this.executeRequest(
           fullUrl,
@@ -106,14 +131,14 @@ export class HttpConnector {
         );
         const latencyMs = Date.now() - startTime;
 
-        // Parse response
-        const rawBody = await response.text();
+        // Read response body with streaming size limit
+        const rawBody = await this.readResponseBody(response, fullUrl);
         const responseHeaders = flattenHeaders(response.headers);
         const body = this.parseResponseBody(rawBody, responseHeaders, sourceId);
 
         // Check for HTTP error status
         if (!response.ok) {
-          this.handleHttpError(response.status, sourceId, rawBody);
+          this.handleHttpError(response.status, sourceId, rawBody, responseHeaders);
         }
 
         // Record circuit breaker success
@@ -169,10 +194,16 @@ export class HttpConnector {
     config: SourceConfig,
     sourceId: string,
     checkpoint?: CheckpointState,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    onPageComplete?: PageCompleteCallback
   ): Promise<PaginatedFetchResult> {
     if (!config.pagination) {
       const result = await this.fetch(config, sourceId, signal);
+      if (onPageComplete) {
+        await onPageComplete(result, 0, result.recordCount, {
+          totalRecordsProcessed: result.recordCount,
+        });
+      }
       return {
         results: [result],
         totalRecords: result.recordCount,
@@ -190,21 +221,33 @@ export class HttpConnector {
     let pageCount = 0;
     const maxPages = DEFAULT_MAX_PAGES;
 
+    // Track seen cursors to detect loops
+    const seenCursors = new Set<string>();
+    if (checkpoint?.lastCursor) {
+      seenCursors.add(checkpoint.lastCursor);
+    }
+
     while (state.hasMore && pageCount < maxPages) {
       // Build request with pagination parameters
       const { url, headers, queryParams } = this.buildRequest(config);
 
-      // For link-based pagination, use nextUrl if available
+      // For link-based pagination, use the full nextUrl directly
+      let fullUrl: string;
       if (config.pagination.type === "link" && state.nextUrl) {
-        const parsed = new URL(state.nextUrl);
-        parsed.searchParams.forEach((value, key) => {
-          queryParams[key] = value;
-        });
+        // Validate and use the next URL from the Link header directly
+        if (this.ssrfProtection) {
+          await validateOutboundUrl(state.nextUrl);
+        }
+        fullUrl = state.nextUrl;
       } else {
         applyPaginationParams(config.pagination, state, queryParams);
+        fullUrl = buildUrl(url, queryParams);
       }
 
-      const fullUrl = buildUrl(url, queryParams);
+      // SSRF protection: validate outbound URL (async — includes DNS check)
+      if (this.ssrfProtection) {
+        await validateOutboundUrl(fullUrl);
+      }
 
       // Execute with retry + resilience
       const retryConfig = { ...DEFAULT_RETRY_CONFIG, ...config.retry };
@@ -226,7 +269,7 @@ export class HttpConnector {
           );
           const latencyMs = Date.now() - startTime;
 
-          const rawBody = await response.text();
+          const rawBody = await this.readResponseBody(response, fullUrl);
           const responseHeaders = flattenHeaders(response.headers);
           const body = this.parseResponseBody(
             rawBody,
@@ -235,7 +278,7 @@ export class HttpConnector {
           );
 
           if (!response.ok) {
-            this.handleHttpError(response.status, sourceId, rawBody);
+            this.handleHttpError(response.status, sourceId, rawBody, responseHeaders);
           }
 
           this.circuitBreaker.recordSuccess(sourceId);
@@ -278,6 +321,34 @@ export class HttpConnector {
           body: result.body,
         },
       });
+
+      // Repeated cursor detection — prevent infinite loops
+      if (config.pagination.type === "cursor" && state.cursor) {
+        if (seenCursors.has(state.cursor)) {
+          logger.warn(
+            { sourceId, cursor: state.cursor },
+            "Repeated cursor detected — stopping pagination to prevent infinite loop"
+          );
+          state = { ...state, hasMore: false };
+        } else {
+          seenCursors.add(state.cursor);
+        }
+      }
+
+      // Build incremental checkpoint for callback
+      const incrementalCheckpoint: CheckpointState = {
+        lastCursor: state.cursor,
+        lastPage: state.page,
+        lastOffset: state.offset,
+        lastSyncTimestamp: new Date(),
+        totalRecordsProcessed:
+          (checkpoint?.totalRecordsProcessed ?? 0) + totalRecords,
+      };
+
+      // Invoke page-complete callback for incremental checkpointing
+      if (onPageComplete) {
+        await onPageComplete(result, pageCount, totalRecords, incrementalCheckpoint);
+      }
 
       logger.debug(
         {
@@ -334,17 +405,20 @@ export class HttpConnector {
   ): Promise<{ healthy: boolean; latencyMs: number; error?: string }> {
     const startTime = Date.now();
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      // SSRF validation for health check URL
+      if (this.ssrfProtection) {
+        await validateOutboundUrl(url);
+      }
 
-      const response = await fetch(url, {
-        method: "GET",
-        signal: controller.signal,
-      });
+      // Use safe redirect following (same as regular requests)
+      const response = await this.executeRequest(
+        url, "GET", {}, undefined, timeoutMs
+      );
 
-      clearTimeout(timer);
+      // Consume body to free socket
+      await response.text().catch(() => {});
+
       const latencyMs = Date.now() - startTime;
-
       return {
         healthy: response.ok,
         latencyMs,
@@ -398,6 +472,14 @@ export class HttpConnector {
 
   // ─── Private: HTTP Execution ─────────────────────────────────────────────
 
+  /** Maximum number of HTTP redirects to follow */
+  private static readonly MAX_REDIRECTS = 10;
+
+  /**
+   * Execute a single HTTP request with safe redirect following.
+   * Uses redirect: "manual" and validates each redirect destination
+   * through SSRF protection to prevent redirect-based SSRF attacks.
+   */
   private async executeRequest(
     url: string,
     method: string,
@@ -406,47 +488,163 @@ export class HttpConnector {
     timeoutMs: number,
     signal?: AbortSignal
   ): Promise<Response> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let currentUrl = url;
+    let redirectCount = 0;
 
-    // Link external signal to our controller
-    const onExternalAbort = (): void => {
-      controller.abort();
-    };
-    signal?.addEventListener("abort", onExternalAbort, { once: true });
+    while (true) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      const onExternalAbort = (): void => {
+        controller.abort();
+      };
+      signal?.addEventListener("abort", onExternalAbort, { once: true });
+
+      try {
+        const fetchOptions: RequestInit = {
+          method,
+          headers,
+          signal: controller.signal,
+          redirect: "manual", // Safe redirect — we validate each hop
+        };
+
+        if (body !== undefined && method !== "GET") {
+          fetchOptions.body = JSON.stringify(body);
+          if (!headers["Content-Type"]) {
+            headers["Content-Type"] = "application/json";
+          }
+        }
+
+        const response = await fetch(currentUrl, fetchOptions);
+
+        // Handle redirects manually with SSRF validation at each hop
+        if ([301, 302, 303, 307, 308].includes(response.status)) {
+          const location = response.headers.get("location");
+          // Consume the redirect response body to free the socket
+          await response.text().catch(() => {});
+
+          if (!location) {
+            throw new ConnectorError("Redirect response missing Location header", {
+              retryable: false,
+              context: { url: currentUrl, status: response.status },
+            });
+          }
+
+          // Resolve relative redirect URLs
+          const nextUrl = new URL(location, currentUrl).toString();
+
+          // SSRF validation on redirect destination
+          if (this.ssrfProtection) {
+            await validateOutboundUrl(nextUrl);
+          }
+
+          redirectCount++;
+          if (redirectCount > HttpConnector.MAX_REDIRECTS) {
+            throw new ConnectorError(
+              `Too many redirects (max ${HttpConnector.MAX_REDIRECTS})`,
+              { retryable: false, context: { url: currentUrl, redirectCount } }
+            );
+          }
+
+          logger.debug(
+            { from: currentUrl, to: nextUrl, redirectCount },
+            "Following redirect with SSRF validation"
+          );
+
+          currentUrl = nextUrl;
+          // 303 changes method to GET; 307/308 preserve method
+          if (response.status === 303) {
+            method = "GET";
+          }
+          continue; // Retry with new URL
+        }
+
+        // Content-length pre-check (fast rejection before streaming)
+        const contentLength = response.headers.get("content-length");
+        if (contentLength && parseInt(contentLength, 10) > this.maxResponseBytes) {
+          // Consume body to free socket
+          await response.text().catch(() => {});
+          throw new ConnectorError(
+            `Response size ${contentLength} exceeds limit of ${this.maxResponseBytes} bytes`,
+            { retryable: false, context: { url: currentUrl, maxResponseBytes: this.maxResponseBytes } }
+          );
+        }
+
+        return response;
+      } catch (err) {
+        if (
+          err instanceof Error &&
+          (err.name === "AbortError" || signal?.aborted)
+        ) {
+          throw new TimeoutError(currentUrl, timeoutMs);
+        }
+        if (err instanceof ConnectorError) throw err;
+        throw new ConnectorError(
+          `HTTP request failed: ${err instanceof Error ? err.message : String(err)}`,
+          { retryable: true, context: { url: currentUrl, method } }
+        );
+      } finally {
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", onExternalAbort);
+      }
+    }
+  }
+
+  /**
+   * Read an HTTP response body as a stream with a hard byte limit.
+   * Protects against responses that exceed maxResponseBytes even when
+   * content-length is missing or incorrect (chunked transfer encoding).
+   */
+  private async readResponseBody(response: Response, url: string): Promise<string> {
+    if (!response.body) {
+      return "";
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
 
     try {
-      const fetchOptions: RequestInit = {
-        method,
-        headers,
-        signal: controller.signal,
-        redirect: "follow",
-      };
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      if (body !== undefined && method !== "GET") {
-        fetchOptions.body = JSON.stringify(body);
-        if (!headers["Content-Type"]) {
-          headers["Content-Type"] = "application/json";
+        totalBytes += value.byteLength;
+        if (totalBytes > this.maxResponseBytes) {
+          await reader.cancel();
+          throw new ConnectorError(
+            `Response body exceeds limit of ${this.maxResponseBytes} bytes (streaming)`,
+            {
+              retryable: false,
+              context: { url, maxResponseBytes: this.maxResponseBytes, bytesRead: totalBytes },
+            }
+          );
         }
-      }
 
-      const response = await fetch(url, fetchOptions);
-      return response;
-    } catch (err) {
-      if (
-        err instanceof Error &&
-        (err.name === "AbortError" || signal?.aborted)
-      ) {
-        throw new TimeoutError(url, timeoutMs);
+        chunks.push(value);
       }
+    } catch (err) {
+      if (err instanceof ConnectorError) throw err;
+      // Reader error — try to cancel and rethrow
+      await reader.cancel().catch(() => {});
       throw new ConnectorError(
-        `HTTP request failed: ${err instanceof Error ? err.message : String(err)}`,
-        { retryable: true, context: { url, method } }
+        `Failed to read response body: ${err instanceof Error ? err.message : String(err)}`,
+        { retryable: true, context: { url } }
       );
-    } finally {
-      clearTimeout(timer);
-      signal?.removeEventListener("abort", onExternalAbort);
     }
+
+    // Concatenate chunks into a single string
+    if (chunks.length === 0) return "";
+    if (chunks.length === 1) return decoder.decode(chunks[0]);
+
+    const total = new Uint8Array(totalBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+      total.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return decoder.decode(total);
   }
 
   // ─── Private: Response Parsing ───────────────────────────────────────────
@@ -488,7 +686,8 @@ export class HttpConnector {
   private handleHttpError(
     status: number,
     sourceId: string,
-    _rawBody: string
+    _rawBody: string,
+    responseHeaders?: Record<string, string>
   ): never {
     // Record circuit breaker failure
     this.circuitBreaker.recordFailure(sourceId, status);
@@ -507,7 +706,9 @@ export class HttpConnector {
         );
 
       case 429: {
-        throw new RateLimitExceededError(sourceId);
+        // Parse Retry-After from response headers if available
+        const retryAfterMs = parseRetryAfterHeader(responseHeaders);
+        throw new RateLimitExceededError(sourceId, retryAfterMs);
       }
 
       case 404:
@@ -676,6 +877,8 @@ export {
   flattenHeaders,
   extractResponseDataArray,
   buildUrl,
+  validateOutboundUrl,
+  parseRetryAfterHeader,
   type SourceConfig,
   type FetchResult,
   type PaginatedFetchResult,

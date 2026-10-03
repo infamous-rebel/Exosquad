@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { createChildLogger } from "@exosquad/logger";
-import { ConnectorError } from "./errors.js";
+import { ConnectorError, RateLimitExceededError } from "./errors.js";
 import { z } from "zod";
 
 const logger = createChildLogger({ module: "retry" });
@@ -108,11 +108,21 @@ export async function withRetry<T>(
         }
       }
 
-      const delayMs = calculateBackoff(attempt, config);
-      logger.debug(
-        { attempt: attempt + 1, maxAttempts: config.maxAttempts, delayMs, error: lastError.message },
-        "Retrying after backoff"
-      );
+      // Use Retry-After delay if provided by upstream (429 responses)
+      let delayMs: number;
+      if (err instanceof RateLimitExceededError && err.retryAfterMs !== undefined) {
+        delayMs = err.retryAfterMs;
+        logger.debug(
+          { attempt: attempt + 1, maxAttempts: config.maxAttempts, retryAfterMs: delayMs },
+          "Using Retry-After delay from upstream"
+        );
+      } else {
+        delayMs = calculateBackoff(attempt, config);
+        logger.debug(
+          { attempt: attempt + 1, maxAttempts: config.maxAttempts, delayMs, error: lastError.message },
+          "Retrying after backoff"
+        );
+      }
 
       await sleep(delayMs, signal);
     }

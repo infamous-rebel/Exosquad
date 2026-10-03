@@ -1,0 +1,1 @@
+Requires Redis reachable at `REDIS_HOST`/`REDIS_PORT`/`REDIS_PASSWORD`; the worker listens on `PORT + 1` for health checks while the main API uses `PORT`. Dev loop runs via `pnpm dev` (`tsx watch src/index.ts`); unit tests run under `vitest.config.ts`.

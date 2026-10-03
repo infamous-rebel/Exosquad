@@ -1,0 +1,1 @@
+Shared TypeScript package providing the application's base error hierarchy, Zod-based input validation schemas, and cross-service types consumed by other Exosquad packages.

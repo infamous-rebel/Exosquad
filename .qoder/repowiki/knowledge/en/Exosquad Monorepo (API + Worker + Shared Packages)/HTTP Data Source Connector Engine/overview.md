@@ -1,0 +1,1 @@
+Production-grade HTTP connector that fetches, authenticates, paginates, retries, rate-limits, and deduplicates data from external API sources with SSRF protection.

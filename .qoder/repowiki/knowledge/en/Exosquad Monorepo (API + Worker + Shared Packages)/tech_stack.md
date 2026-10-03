@@ -1,0 +1,1 @@
+pnpm 9 workspaces + Turbo 2 for task orchestration; TypeScript 5 with ESLint 9 + typescript-eslint; Vitest 2 with V8 coverage; Fastify for HTTP; BullMQ for background jobs; Prisma for schema/migrations against PostgreSQL 16; Redis 7 as BullMQ backend; Pino for structured logging.

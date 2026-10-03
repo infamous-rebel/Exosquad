@@ -1,0 +1,1 @@
+TypeScript 5.6 compiled to CommonJS under `dist/`; runtime dependency on `zod ^3.23.8` for schema definitions; build via plain `tsc` (no bundler).

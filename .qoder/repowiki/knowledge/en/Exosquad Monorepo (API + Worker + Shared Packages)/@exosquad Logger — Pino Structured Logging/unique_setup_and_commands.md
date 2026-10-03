@@ -1,0 +1,1 @@
+Behavior is driven by environment variables `LOG_LEVEL` (default `info`) and `NODE_ENV`; running in non-production mode enables the pretty-print transport. Build via `pnpm build` (runs `tsc`) or type-check via `pnpm typecheck`.

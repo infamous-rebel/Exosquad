@@ -1,5 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-import type { Prisma } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
 export { PrismaClient, Prisma };
 export type * from "@prisma/client";

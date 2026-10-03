@@ -20,6 +20,25 @@ const loginSchema = z.object({
   tenantSlug: z.string().min(1),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(8).max(128),
+});
+
+const onboardingSchema = z.object({
+  businessName: z.string().min(1).max(255).optional(),
+  businessRole: z.enum(["reseller", "importer", "both"]).optional(),
+  primaryMarket: z.string().min(1).max(100).optional(),
+  productCategories: z.array(z.string().max(100)).max(20).optional(),
+  sourcingRegions: z.array(z.string().max(100)).max(20).optional(),
+  budgetRange: z.string().max(50).optional(),
+  objective: z.string().max(500).optional(),
+});
+
 export async function authRoutes(server: FastifyInstance): Promise<void> {
   const authService = new AuthService();
 
@@ -62,6 +81,37 @@ export async function authRoutes(server: FastifyInstance): Promise<void> {
     async (request) => {
       const user = await authService.getProfile(request.user!.userId);
       return { user };
+    }
+  );
+
+  // ─── POST /api/v1/auth/forgot-password ─────────────────────────────────
+  server.post("/forgot-password", async (request, reply) => {
+    const body = forgotPasswordSchema.parse(request.body);
+    const result = await authService.requestPasswordReset(body.email);
+    return reply.send(result);
+  });
+
+  // ─── POST /api/v1/auth/reset-password ──────────────────────────────────
+  server.post("/reset-password", async (request, reply) => {
+    const body = resetPasswordSchema.parse(request.body);
+    const result = await authService.resetPassword(body.token, body.newPassword);
+    return reply.send(result);
+  });
+
+  // ─── POST /api/v1/auth/onboarding ──────────────────────────────────────
+  server.post(
+    "/onboarding",
+    {
+      preHandler: async (request: FastifyRequest) => {
+        await server.authenticate(request);
+      },
+    },
+    async (request, reply) => {
+      const body = onboardingSchema.parse(request.body);
+      // Tenant ID comes from JWT — never from client input
+      const tenantId = request.user!.tenantId;
+      const result = await authService.updateOnboarding(tenantId, body);
+      return reply.send(result);
     }
   );
 }

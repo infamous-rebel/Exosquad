@@ -1,0 +1,1 @@
+Shared structured JSON logger built on Pino, exposing a root logger and child-logger factory with bound context fields for request-scoped logging across Exosquad services.

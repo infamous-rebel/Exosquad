@@ -1,0 +1,4 @@
+- Cross-cutting concerns live in `packages/*` and are consumed by apps via pnpm workspace hoisting rather than published to npm.
+- Runtime configuration is centralized through `@exosquad/config`, which validates every environment variable with Zod before use.
+- Structured logging uses `@exosquad/logger` child-loggers bound with request/job context instead of ad-hoc console output.
+- Database access goes through the singleton PrismaClient from `@exosquad/database`; direct connection strings are not constructed in apps.

@@ -1,0 +1,1 @@
+Pino v9 for structured JSON logging with the `pino-pretty` transport for development-time colorized output; TypeScript 5.6 compilation target.

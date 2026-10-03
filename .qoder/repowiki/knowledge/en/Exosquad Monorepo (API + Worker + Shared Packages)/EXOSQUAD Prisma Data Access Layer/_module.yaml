@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: packages_database
+title: EXOSQUAD Prisma Data Access Layer
+scope:
+    - packages/database/
+source_files: []
+depends_on: []
+related_to: []

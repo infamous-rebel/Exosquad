@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: packages_common
+title: '@exosquad/common — Shared Types, Errors & Validation'
+scope:
+    - packages/common/
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,1 @@
+TypeScript compiled via `tsc` (no bundler); runtime uses native `fetch`/`URL`; schema validation via Zod; testing via Vitest; logging via `@exosquad/logger`.

@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: packages_config
+title: Environment Configuration & Validation
+scope:
+    - packages/config/
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,1 @@
+Development uses `npm run dev` (tsx watch on `src/index.ts`); production build is `tsc` producing ESM under `dist/`, started via `node dist/index.js`. Unit tests run with `npm test` / `npm run test:unit`; integration tests require `npm run test:integration` which loads `vitest.config.integration.ts` (separate include pattern and 60s timeout).

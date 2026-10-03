@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: packages_logger
+title: '@exosquad Logger — Pino Structured Logging'
+scope:
+    - packages/logger/
+source_files: []
+depends_on: []
+related_to: []

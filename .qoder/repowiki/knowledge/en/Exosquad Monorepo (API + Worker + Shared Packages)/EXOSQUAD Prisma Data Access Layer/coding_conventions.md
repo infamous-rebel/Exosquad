@@ -1,0 +1,5 @@
+- Every model uses `String @id @default(cuid())` for primary keys and `@@map(...)` to pin table names distinct from the default pluralized form.
+- Multi-tenancy is enforced by a `tenantId` field on most models, with indexes on `[tenantId]` and unique constraints scoped to `(tenantId, email)` where applicable.
+- Timestamped entities follow the `createdAt DateTime @default(now())` / `updatedAt DateTime @updatedAt` pair pattern.
+- Free-form configuration fields are stored as `Json @default("{}")` (e.g. `config`, `attributes`, `payload`, `metadata`).
+- Enum-like state is modeled as `String` fields with inline comment enums (e.g. `status`, `role`, `normalizationStatus`) rather than Prisma enum types.
